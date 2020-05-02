@@ -1,4 +1,4 @@
-(function fileClosure(){ 
+function fileClosure(){ 
   // everything in this file should be declared within this closure (function).
 
   // global variables
@@ -6,6 +6,7 @@
   hidden = 'hidden';
 
   const doc = document.documentElement;
+  const parentURL = '{{ .Site.BaseURL }}';
   const staticman = Object.create(null);
   {{ with .Site.Params.staticman -}}
   const endpoint = '{{ .endpoint | default "https://staticman3.herokuapp.com" }}';
@@ -113,6 +114,18 @@
 
   function isBlank(str) {
     return (!str || str.trim().length === 0);
+  }
+
+  function isMatch(element, selectors) {
+    if(isObj(element)) {
+      if(selectors.isArray) {
+        let matching = selectors.map(function(selector){
+          return element.matches(selector)
+        })
+        return matching.includes(true);
+      }
+      return element.matches(selectors)
+    }
   }
 
   (function updateDate() {
@@ -463,7 +476,7 @@
       Array.from(links).forEach(function(link){
         let target, rel, blank, noopener, attr1, attr2, url, isExternal;
         url = elemAttribute(link, 'href');
-        isExternal = (url && typeof url == 'string' && url.startsWith('http')) && !containsClass(link, 'nav_item') && !isChild(link, '.post_item') && !isChild(link, '.pager') ? true : false;
+        isExternal = (url && typeof url == 'string' && url.startsWith('http')) && !url.startsWith(parentURL) ? true : false;
         if(isExternal) {
           target = 'target';
           rel = 'rel';
@@ -502,6 +515,15 @@
       pushClass(node, 'link_owner');
     }
   });
+
+  let inlineListItems = elems('ol li');
+  if(inlineListItems) {
+    inlineListItems.forEach(function(listItem){
+      let firstChild = listItem.children[0]
+      let containsHeading = isMatch(firstChild, tags);
+      containsHeading ? pushClass(listItem, 'align') : false;
+    })
+  }
 
   const copyToClipboard = str => {
     let copy, selection, selected;
@@ -542,7 +564,7 @@
   })();
 
   (function copyLinkToShare() {
-    let  copy, copied, excerpt, isCopyIcon, isInExcerpt, link, page, postCopy, postLink, target;
+    let  copy, copied, excerpt, isCopyIcon, isInExcerpt, link, postCopy, postLink, target;
     copy = 'copy';
     copied = 'copy_done';
     excerpt = 'excerpt';
@@ -552,8 +574,10 @@
     doc.addEventListener('click', function(event) {
       target = event.target;
       isCopyIcon = containsClass(target, copy);
-      isInExcerpt = containsClass(target, postCopy);
-      if (isCopyIcon) {
+      let isWithinCopyIcon = target.closest(`.${copy}`);
+      if (isCopyIcon || isWithinCopyIcon) {
+        let icon = isCopyIcon ? isCopyIcon : isWithinCopyIcon;
+        isInExcerpt =  containsClass(icon, postCopy);
         if (isInExcerpt) {
           link = target.closest(`.${excerpt}`).previousElementSibling;
           link = containsClass(link, postLink)? elemAttribute(link, 'href') : false;
@@ -562,7 +586,7 @@
         }
         if(link) {
           copyToClipboard(link);
-          pushClass(target, copied);
+          pushClass(icon, copied);
         }
       }
     });
@@ -588,5 +612,25 @@
     }
   })();
 
+  (function postsPager(){
+    const pager = elem('.pagination');
+    if (pager) {
+      pushClass(pager, 'pager');
+      const pagerItems = elems('li', pager);
+      const pagerLinks = Array.from(pagerItems).map(function(item){
+        return item.firstElementChild;
+      });
+      
+      pagerLinks.forEach(function(link){
+        pushClass(link, 'pager_link')
+      });
+
+      pagerItems.forEach(function(item){
+        pushClass(item, 'pager_item')
+      });
+    }
+  })();
+
   // add new code above this line
-})();
+}
+window.addEventListener('load', fileClosure());

@@ -1,32 +1,32 @@
-{{ define "main" }}
-{{ $scratch := newScratch }}
-{{ if isset .Params "image" }}
-  {{ $scratch.Set "image" .Params.image }}
-{{ else }}
+{{- define "main" }}
+{{- $scratch := newScratch }}
+{{- if isset .Params "image" }}
+  {{- $scratch.Set "image" .Params.image }}
+{{- else }}
   {{ $scratch.Set "image" "thumbnail.svg" }}
-{{ end }}
-{{ $image := $scratch.Get "image" }}
-{{ $bg := (path.Join "images" $image | absLangURL) }}
+{{- end }}
+{{- $image := $scratch.Get "image" }}
+{{- $bg := (path.Join "images" $image | absLangURL) }}
 <section class = 'post_header' style = 'background-image:url({{ $bg }});'>
-{{ printf "<!-- inline style to be moved into CSS later -->" | safeHTML }}
   <h1 class='post_title'>{{ .Title }}</h1>
+  <p> Posted <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "Jan 2, 2006" }}</time></p>
 </section>
 <div class = 'post'>
   <article class='post_content'>
-    {{ .Content }}
+    {{- .Content }}
     <div class = 'post_extra'>
-      <div class = 'copy'></div>
+      {{- partial "copy" . }}
     </div>
-    {{ partial "author.html" . }}
+    {{- partial "author" . }}
   </article>
-  {{ if .Site.Params.Staticman }}
-    {{ partial "comments.html" . }}
-  {{ end }}
+  {{- if .Site.Params.Staticman }}
+    {{- partial "comments" . }}
+  {{- end }}
   <aside>
-    {{ partial "aside.html" . }}
+    {{- partial "aside" . }}
   </aside>
 </div>
 <script src = '{{ absURL "js/autosize.min.js" }}'></script>
-{{ $timeagoScr := resources.Get "js/timeago.js" | resources.ExecuteAsTemplate "js/timeago.js" . }}
+{{- $timeagoScr := resources.Get "js/timeago.js" | resources.ExecuteAsTemplate "js/timeago.js" . }}
 <script src = '{{ $timeagoScr.Permalink }}'></script>
-{{ end }}
+{{- end }}
